@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Bus Pass Generated - College Bus Pass{% endblock %}
+
+{% block content %}
+<div class="success-container">
+    <div class="success-card">
+        <div class="success-header">
+            <i class="fas fa-check-circle"></i>
+            <h2>Bus Pass Generated Successfully!</h2>
+            <p>Your digital bus pass is ready to use</p>
+        </div>
+        
+        <div class="pass-display">
+            <div class="pass-card">
+                <div class="pass-header">
+                    <h3>College Bus Pass</h3>
+                    <div class="pass-status active">Active</div>
+                </div>
+                
+                <div class="student-info">
+                    <div class="info-row">
+                        <span class="label">Registration No:</span>
+                        <span class="value">{{ student.reg_no }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Name:</span>
+                        <span class="value">{{ student.name }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Department:</span>
+                        <span class="value">{{ student.department }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Year:</span>
+                        <span class="value">{{ student.year }}</span>
+                    </div>
+                </div>
+                
+                <div class="qr-section">
+                    <img src="{{ url_for('static', filename='qrcodes/' + student.qr_code_path) }}" 
+                         alt="Bus Pass QR Code" class="qr-code">
+                    <p>Show this QR code to the bus conductor</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <a href="{{ url_for('student_login') }}" class="btn-primary">
+                <i class="fas fa-sign-in-alt"></i>
+                Login to Access Pass
+            </a>
+            <button onclick="window.print()" class="btn-secondary">
+                <i class="fas fa-print"></i>
+                Print Pass
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

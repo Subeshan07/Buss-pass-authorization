@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - College Bus Pass{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="dashboard-header">
+        <h1>Admin Dashboard</h1>
+        <p>Manage students and bus passes</p>
+    </div>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ students|length }}</h3>
+                <p>Total Students</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ students|selectattr('is_active')|list|length }}</h3>
+                <p>Active Passes</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-ban"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ students|rejectattr('is_active')|list|length }}</h3>
+                <p>Revoked Passes</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-qrcode"></i>
+            </div>
+            <div class="stat-info">
+                <h3><a href="{{ url_for('scan') }}">Scanner</a></h3>
+                <p>Verify Passes</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="students-section">
+        <div class="section-header">
+            <h2>Student Management</h2>
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search students..." onkeyup="filterStudents()">
+            </div>
+        </div>
+        
+        <div class="students-table">
+            <table id="studentsTable">
+                <thead>
+                    <tr>
+                        <th>Reg No</th>
+                        <th>Name</th>
+                        <th>Department</th>
+                        <th>Year</th>
+                        <th>Status</th>
+                        <th>Registered</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <td>{{ student.reg_no }}</td>
+                        <td>{{ student.name }}</td>
+                        <td>{{ student.department }}</td>
+                        <td>{{ student.year }}</td>
+                        <td>
+                            <span class="status-badge {{ 'active' if student.is_active else 'inactive' }}">
+                                {{ 'Active' if student.is_active else 'Revoked' }}
+                            </span>
+                        </td>
+                        <td>{{ student.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td class="actions">
+                            {% if student.is_active %}
+                                <a href="{{ url_for('revoke_pass', student_id=student.id) }}" 
+                                   class="btn-danger btn-sm" 
+                                   onclick="return confirm('Are you sure you want to revoke this pass?')">
+                                    <i class="fas fa-ban"></i>
+                                    Revoke
+                                </a>
+                            {% else %}
+                                <a href="{{ url_for('activate_pass', student_id=student.id) }}" 
+                                   class="btn-success btn-sm">
+                                    <i class="fas fa-check"></i>
+                                    Activate
+                                </a>
+                            {% endif %}
+                            {% if student.qr_code_path %}
+                                <button onclick="viewQR('{{ student.reg_no }}', '{{ student.qr_code_path }}')" 
+                                        class="btn-secondary btn-sm">
+                                    <i class="fas fa-qrcode"></i>
+                                    View QR
+                                </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- QR Code Modal -->
+<div id="qrModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">QR Code</h3>
+            <span class="close" onclick="closeModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <img id="modalQR" src="" alt="QR Code">
+        </div>
+    </div>
+</div>
+
+<script>
+function filterStudents() {
+    const input = document.getElementById('searchInput');
+    const filter = input.value.toLowerCase();
+    const table = document.getElementById('studentsTable');
+    const rows = table.getElementsByTagName('tr');
+    
+    for (let i = 1; i < rows.length; i++) {
+        const cells = rows[i].getElementsByTagName('td');
+        let showRow = false;
+        
+        for (let j = 0; j < cells.length - 1; j++) {
+            if (cells[j].textContent.toLowerCase().includes(filter)) {
+                showRow = true;
+                break;
+            }
+        }
+        
+        rows[i].style.display = showRow ? '' : 'none';
+    }
+}
+
+function viewQR(regNo, qrPath) {
+    document.getElementById('modalTitle').textContent = `QR Code - ${regNo}`;
+    document.getElementById('modalQR').src = `/static/qrcodes/${qrPath}`;
+    document.getElementById('qrModal').style.display = 'block';
+}
+
+function closeModal() {
+    document.getElementById('qrModal').style.display = 'none';
+}
+
+window.onclick = function(event) {
+    const modal = document.getElementById('qrModal');
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

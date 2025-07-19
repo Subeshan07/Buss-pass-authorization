@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - College Bus Pass{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>Welcome, {{ current_user.name }}</h1>
+        <p>Your digital bus pass dashboard</p>
+    </div>
+    
+    <div class="dashboard-content">
+        <div class="pass-section">
+            <div class="pass-card">
+                <div class="pass-header">
+                    <h3>Your Bus Pass</h3>
+                    <div class="pass-status {{ 'active' if current_user.is_active else 'inactive' }}">
+                        {{ 'Active' if current_user.is_active else 'Inactive' }}
+                    </div>
+                </div>
+                
+                <div class="student-info">
+                    <div class="info-row">
+                        <span class="label">Registration No:</span>
+                        <span class="value">{{ current_user.reg_no }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Name:</span>
+                        <span class="value">{{ current_user.name }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Department:</span>
+                        <span class="value">{{ current_user.department }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Year:</span>
+                        <span class="value">{{ current_user.year }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Registered:</span>
+                        <span class="value">{{ current_user.created_at.strftime('%B %d, %Y') }}</span>
+                    </div>
+                </div>
+                
+                {% if current_user.is_active and current_user.qr_code_path %}
+                <div class="qr-section">
+                    <img src="{{ url_for('static', filename='qrcodes/' + current_user.qr_code_path) }}" 
+                         alt="Bus Pass QR Code" class="qr-code">
+                    <p>Show this QR code to the bus conductor</p>
+                    <button onclick="downloadQR()" class="btn-secondary">
+                        <i class="fas fa-download"></i>
+                        Download QR Code
+                    </button>
+                </div>
+                {% elif not current_user.is_active %}
+                <div class="inactive-message">
+                    <i class="fas fa-ban"></i>
+                    <p>Your pass has been deactivated. Please contact the administration.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="quick-actions">
+            <h3>Quick Actions</h3>
+            <div class="action-grid">
+                <a href="{{ url_for('scan') }}" class="action-card">
+                    <i class="fas fa-qrcode"></i>
+                    <h4>QR Scanner</h4>
+                    <p>Scan QR codes for verification</p>
+                </a>
+                <button onclick="window.print()" class="action-card">
+                    <i class="fas fa-print"></i>
+                    <h4>Print Pass</h4>
+                    <p>Print your bus pass</p>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function downloadQR() {
+    const link = document.createElement('a');
+    link.href = "{{ url_for('static', filename='qrcodes/' + current_user.qr_code_path) }}";
+    link.download = "{{ current_user.reg_no }}_bus_pass.png";
+    link.click();
+}
+</script>
+{% endblock %}

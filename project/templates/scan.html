@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}QR Code Scanner - College Bus Pass{% endblock %}
+
+{% block content %}
+<div class="scanner-container">
+    <div class="scanner-header">
+        <h1>QR Code Scanner</h1>
+        <p>Scan student bus passes for verification</p>
+    </div>
+    
+    <div class="scanner-content">
+        <div class="scanner-section">
+            <div id="reader" class="qr-reader"></div>
+            <div class="scanner-controls">
+                <button id="start-scan" class="btn-primary">
+                    <i class="fas fa-camera"></i>
+                    Start Scanning
+                </button>
+                <button id="stop-scan" class="btn-secondary" style="display: none;">
+                    <i class="fas fa-stop"></i>
+                    Stop Scanning
+                </button>
+            </div>
+        </div>
+        
+        <div class="result-section">
+            <div id="scan-result" class="scan-result" style="display: none;">
+                <div class="result-header">
+                    <h3>Scan Result</h3>
+                </div>
+                <div id="result-content"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+let html5QrcodeScanner = null;
+let isScanning = false;
+
+document.getElementById('start-scan').addEventListener('click', startScanning);
+document.getElementById('stop-scan').addEventListener('click', stopScanning);
+
+function startScanning() {
+    if (isScanning) return;
+    
+    html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader",
+        {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0
+        },
+        false
+    );
+    
+    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    
+    document.getElementById('start-scan').style.display = 'none';
+    document.getElementById('stop-scan').style.display = 'inline-block';
+    isScanning = true;
+}
+
+function stopScanning() {
+    if (!isScanning) return;
+    
+    if (html5QrcodeScanner) {
+        html5QrcodeScanner.clear();
+        html5QrcodeScanner = null;
+    }
+    
+    document.getElementById('start-scan').style.display = 'inline-block';
+    document.getElementById('stop-scan').style.display = 'none';
+    isScanning = false;
+}
+
+function onScanSuccess(decodedText, decodedResult) {
+    console.log(`Scan result: ${decodedText}`);
+    
+    // Stop scanning temporarily
+    stopScanning();
+    
+    // Send to backend for verification
+    fetch('/verify', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ qr_data: decodedText })
+    })
+    .then(response => response.json())
+    .then(data => {
+        displayResult(data);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        displayResult({
+            status: 'error',
+            message: 'Failed to verify QR code'
+        });
+    });
+}
+
+function onScanFailure(error) {
+    // Handle scan failures silently
+    console.log(`Scan failed: ${error}`);
+}
+
+function displayResult(data) {
+    const resultDiv = document.getElementById('scan-result');
+    const contentDiv = document.getElementById('result-content');
+    
+    let resultHTML = '';
+    let resultClass = '';
+    
+    switch(data.status) {
+        case 'valid':
+            resultClass = 'result-valid';
+            resultHTML = `
+                <div class="result-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h4>Valid Pass ✅</h4>
+                <div class="student-details">
+                    <div class="detail-row">
+                        <span class="label">Registration No:</span>
+                        <span class="value">${data.student.reg_no}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Name:</span>
+                        <span class="value">${data.student.name}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Department:</span>
+                        <span class="value">${data.student.department}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Year:</span>
+                        <span class="value">${data.student.year}</span>
+                    </div>
+                </div>
+            `;
+            break;
+            
+        case 'blocked':
+            resultClass = 'result-blocked';
+            resultHTML = `
+                <div class="result-icon">
+                    <i class="fas fa-ban"></i>
+                </div>
+                <h4>Pass Blocked ⚠️</h4>
+                <p>${data.message}</p>
+            `;
+            break;
+            
+        case 'invalid':
+            resultClass = 'result-invalid';
+            resultHTML = `
+                <div class="result-icon">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <h4>Invalid Pass ❌</h4>
+                <p>${data.message}</p>
+            `;
+            break;
+            
+        default:
+            resultClass = 'result-error';
+            resultHTML = `
+                <div class="result-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h4>Error</h4>
+                <p>${data.message}</p>
+            `;
+    }
+    
+    contentDiv.innerHTML = resultHTML;
+    contentDiv.className = `result-content ${resultClass}`;
+    resultDiv.style.display = 'block';
+    
+    // Auto-hide result after 5 seconds and restart scanning
+    setTimeout(() => {
+        resultDiv.style.display = 'none';
+        if (!isScanning) {
+            startScanning();
+        }
+    }, 5000);
+}
+
+// Auto-start scanning when page loads
+window.addEventListener('load', () => {
+    setTimeout(startScanning, 1000);
+});
+</script>
+{% endblock %}

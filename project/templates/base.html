@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}College Bus Pass Authenticator{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="nav-brand">
+                <i class="fas fa-bus"></i>
+                <h1>College Bus Pass System</h1>
+            </div>
+            <nav class="nav-links">
+                {% if current_user.is_authenticated %}
+                    {% if current_user.__class__.__name__ == 'Admin' %}
+                        <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+                    {% else %}
+                        <a href="{{ url_for('student_dashboard') }}">My Pass</a>
+                    {% endif %}
+                    <a href="{{ url_for('scan') }}">Scanner</a>
+                    <a href="{{ url_for('logout') }}" class="btn-secondary">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('login_choice') }}">Login</a>
+                    <a href="{{ url_for('register') }}" class="btn-primary">Register</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">
+                            <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'warning' else 'times-circle' if category == 'error' else 'info-circle' }}"></i>
+                            {{ message }}
+                            <button class="close-flash" onclick="this.parentElement.remove()">×</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 College Bus Pass Authenticator System. Secure & Reliable.</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
