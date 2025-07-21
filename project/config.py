@@ -5,7 +5,7 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     
     # Database Configuration
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'mysql+pymysql://root:Sube%402005@localhost/buspass_db'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('mysql://root:gQbCPdthFOysMl1DShNBgNtsCrdCmAyR@shinkansen.proxy.rlwy.net:56979/railway') or 'mysql+pymysql://root:Sube%402005@localhost/buspass_db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Session Configuration
